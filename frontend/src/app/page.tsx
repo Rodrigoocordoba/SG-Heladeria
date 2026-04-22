@@ -2,24 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { InventoryTable, InventoryItem } from "@/components/dashboard/InventoryTable";
+import { InventoryLogsTable, InventoryLog } from "@/components/dashboard/InventoryLogsTable";
 import { NewSaleModal } from "@/components/dashboard/NewSaleModal";
 import { AddStockModal } from "@/components/dashboard/AddStockModal";
 import { Toaster } from "@/components/ui/sonner";
 
 export default function Home() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [logs, setLogs] = useState<InventoryLog[]>([]);
   const [kpis, setKpis] = useState({ ventas_del_dia: 0, efectivo_en_caja: 0 });
   const [loading, setLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     try {
-      const [invRes, kpiRes] = await Promise.all([
+      const [invRes, kpiRes, logsRes] = await Promise.all([
         fetch("http://127.0.0.1:8000/inventory/"),
-        fetch("http://127.0.0.1:8000/kpis/")
+        fetch("http://127.0.0.1:8000/kpis/"),
+        fetch("http://127.0.0.1:8000/inventory/logs/")
       ]);
       
       if (invRes.ok) setInventory(await invRes.json());
       if (kpiRes.ok) setKpis(await kpiRes.json());
+      if (logsRes.ok) setLogs(await logsRes.json());
       
     } catch (error) {
       console.error("Failed to fetch dashboard data", error);
@@ -89,7 +93,10 @@ export default function Home() {
           {loading ? (
              <div className="p-8 text-center text-gray-500 bg-white rounded-xl border border-gray-100">Cargando datos...</div>
           ) : (
-            <InventoryTable data={inventory} />
+            <>
+              <InventoryTable data={inventory} />
+              <InventoryLogsTable data={logs} />
+            </>
           )}
         </div>
 

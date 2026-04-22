@@ -32,6 +32,16 @@ class Inventory(Base):
     
     product = relationship("Product", back_populates="inventory")
 
+class InventoryLog(Base):
+    __tablename__ = "inventory_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"))
+    movement_type = Column(String) # 'SALE', 'MANUAL_ADD', 'ADJUSTMENT'
+    quantity_changed = Column(Float) # Positivo si entra, negativo si sale
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    product = relationship("Product")
+
 class Sale(Base):
     __tablename__ = "sales"
     id = Column(Integer, primary_key=True, index=True)
@@ -86,6 +96,14 @@ class InventoryResponse(BaseModel):
 class KPIData(BaseModel):
     ventas_del_dia: float
     efectivo_en_caja: float
+
+class InventoryLogResponse(BaseModel):
+    id: int
+    product_name: str
+    movement_type: str
+    quantity_changed: float
+    is_by_weight: bool
+    created_at: datetime
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -150,8 +168,33 @@ def add_inventory(product_id: int, payload: InventoryAdd, db: Session = Depends(
         raise HTTPException(status_code=404, detail="Inventory not found for this product")
     
     inventory.current_amount_grams += payload.amount_to_add
+    
+    # Registrar Movimiento
+    log = InventoryLog(
+        product_id=product_id,
+        movement_type="MANUAL_ADD",
+        quantity_changed=payload.amount_to_add
+    )
+    db.add(log)
+    
     db.commit()
     return {"message": "Stock added successfully", "new_amount": inventory.current_amount_grams}
+
+@app.get("/inventory/logs/", response_model=List[InventoryLogResponse])
+def get_inventory_logs(limit: int = 50, db: Session = Depends(get_db)):
+    logs = db.query(InventoryLog).order_by(InventoryLog.created_at.desc()).limit(limit).all()
+    response = []
+    for log in logs:
+        prod = log.product
+        response.append(InventoryLogResponse(
+            id=log.id,
+            product_name=prod.name,
+            movement_type=log.movement_type,
+            quantity_changed=log.quantity_changed,
+            is_by_weight=prod.is_by_weight,
+            created_at=log.created_at
+        ))
+    return response
 
 # Endpoints Ventas y Lógica de Stock
 @app.post("/sales/")
@@ -193,6 +236,14 @@ def create_sale(sale: SaleCreate, db: Session = Depends(get_db)):
         # Descontar del inventario
         inventory = db.query(Inventory).filter(Inventory.product_id == product.id).first()
         inventory.current_amount_grams -= item.quantity_sold
+        
+        # Registrar Movimiento (Venta)
+        log = InventoryLog(
+            product_id=product.id,
+            movement_type="SALE",
+            quantity_changed=-item.quantity_sold
+        )
+        db.add(log)
     
     db.commit()
     return {"message": "Sale registered successfully", "sale_id": db_sale.id, "total": total}
