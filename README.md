@@ -1,30 +1,30 @@
-# SG-Heladería 🍦
+# SG-Heladería 🍦 - Versión 2.0 (Arquitectura Doble Velocidad)
 
-Sistema de Gestión (MVP) para una heladería, diseñado para manejar la complejidad del control de stock donde el producto se ingresa en volumen (Baldes/Kilos) pero se vende fraccionado (Gramos/Unidades).
+Sistema Integral de Gestión (ERP/POS) para una heladería. Esta versión introduce un rediseño completo de la interfaz ("Tablet-First" con Dark Mode y Glassmorphism) y un cambio estructural profundo en la lógica de negocio usando el modelo de **"Doble Velocidad"**:
+1. **Velocidad Comercial**: El Punto de Venta (POS) es extremadamente rápido. Se registra el "Consumo Teórico" basado en formatos vendidos (ej: 1 Kilo) y los sabores elegidos, descontando únicamente el envase físico en tiempo real.
+2. **Velocidad Operativa**: Mediante un sistema de control de Turnos, se registra el peso real de los baldes al abrir y cerrar la caja. Esto permite calcular el "Consumo Real" y auditar con precisión milimétrica las mermas o diferencias contra las ventas facturadas.
 
 ## 🚀 Tecnologías Utilizadas
 
 ### Backend
-* **Python / FastAPI**: Framework web de alto rendimiento.
-* **SQLAlchemy**: ORM para la interacción con la base de datos.
-* **SQLite**: Base de datos utilizada para el MVP local (Configurado para migrar a **PostgreSQL** en producción).
+* **Python / FastAPI**: Framework web asíncrono y de alto rendimiento.
+* **SQLAlchemy**: ORM para la interacción con la base de datos relacional.
+* **SQLite**: Base de datos utilizada para desarrollo local (`heladeria_v2.db`).
 
 ### Frontend
-* **Next.js 15 (App Router)**: Framework de React.
-* **Tailwind CSS**: Para el diseño y estilizado responsivo.
-* **Shadcn/UI**: Componentes accesibles y personalizables (Dialogs, Selects, Toasts, Progress).
+* **Next.js 14 (App Router)**: Framework de React.
+* **Zustand**: Manejo de estado global ultrarrápido y simplificado para todos los módulos.
+* **Tailwind CSS**: Framework utilitario para un diseño moderno, responsivo y táctil.
+* **Shadcn/UI & Sonner**: Componentes accesibles y sistema de notificaciones en tiempo real (Toasts).
 
 ---
 
-## 📦 Funcionalidades Implementadas (Fase 1 y 2)
+## 📦 Módulos del Sistema
 
-* **Dashboard Principal**: Panel con KPIs dinámicos que muestran las *Ventas del Día*, *Efectivo en Caja* y *Alertas de Stock Bajo*.
-* **Control de Inventario**: Tabla dinámica en tiempo real que lista los productos, su categoría y el stock restante con barras de progreso visuales (verde, amarillo, rojo según el nivel crítico).
-* **Ingreso de Mercadería**: Sistema para inyectar nuevo stock a los productos existentes (ej. 10.000 gramos de un nuevo balde).
-* **Punto de Venta (POS)**: Modal para registrar "Nuevas Ventas". Permite seleccionar el producto, ingresar los gramos o unidades vendidas, y automáticamente:
-  * Suma el valor a la caja del día.
-  * Descuenta el stock de la base de datos en tiempo real.
-* **Notificaciones UX**: Integración de Toasts (Notificaciones push) para el feedback de éxito o error en las operaciones.
+* 🛒 **Punto de Venta (POS)**: Interfaz de venta rápida dividida en Panel de Catálogo (máquina de estados Formatos -> Sabores) y Carrito. Bloqueado por seguridad si no hay un turno abierto.
+* 📊 **Dashboard**: Panel principal con métricas financieras (Ventas del día, Efectivo, Transferencias), alertas tempranas de bajo stock, y log histórico de transacciones recientes.
+* 📦 **Inventario**: Control estricto del stock físico (envases, cucuruchos, insumos). Muestra barras de progreso de consumo y registra un log de auditoría inmutable por cada movimiento (`SALE_ENVASE`, `MANUAL_ADD`).
+* 🕐 **Turnos & Auditoría**: Flujo de caja que obliga a registrar el pesaje inicial y final de cada sabor de helado. Genera reportes automáticos detallando diferencias en gramos entre el stock real y el teórico.
 
 ---
 
@@ -33,20 +33,22 @@ Sistema de Gestión (MVP) para una heladería, diseñado para manejar la complej
 ```text
 SG-Heladeria/
 │
-├── backend/                  # API FastAPI
+├── backend/                  # API FastAPI (Puerto 8000)
 │   ├── app/
-│   │   ├── main.py           # Modelos de BD, Schemas y Endpoints
+│   │   ├── main.py           # Modelos de SQLAlchemy, Pydantic Schemas y Endpoints
 │   ├── requirements.txt      # Dependencias de Python
-│   └── heladeria.db          # Base de datos local (SQLite)
+│   ├── seed_data.py          # Script de poblado inicial de datos de prueba
+│   └── heladeria_v2.db       # Base de datos local (SQLite)
 │
-└── frontend/                 # Aplicación Next.js
+└── frontend/                 # Aplicación Next.js (Puerto 3000)
     ├── src/
-    │   ├── app/
-    │   │   ├── page.tsx      # Dashboard Principal
-    │   │   └── layout.tsx
-    │   ├── components/
-    │   │   ├── dashboard/    # Componentes de negocio (Tablas, Modales)
-    │   │   └── ui/           # Componentes de Shadcn (Botones, Inputs, etc.)
+    │   ├── app/(app)/        # Layout App Router
+    │   │   ├── pos/          # Pantalla de Ventas
+    │   │   ├── dashboard/    # Panel de KPI
+    │   │   ├── inventario/   # Gestión de Insumos
+    │   │   └── turnos/       # Apertura, Cierre y Pesajes
+    │   ├── store/            # Stores de Zustand (pos-store, shifts-store, etc)
+    │   └── components/       # Componentes reutilizables UI
     └── package.json
 ```
 
@@ -65,11 +67,14 @@ python -m venv venv
 .\venv\Scripts\activate
 # Instalar dependencias
 pip install -r requirements.txt
+
+# (Opcional) Cargar datos de prueba (Formatos y Sabores)
+python seed_data.py
+
 # Iniciar servidor
 uvicorn app.main:app --reload
 ```
 La API estará corriendo en `http://127.0.0.1:8000`.
-Puedes acceder a la documentación interactiva en `http://127.0.0.1:8000/docs`.
 
 ### 2. Levantar el Frontend (Web)
 
@@ -85,6 +90,7 @@ La interfaz de usuario estará corriendo en `http://localhost:3000`.
 ---
 
 ## 📝 Roadmap (Próximos pasos)
-* [ ] **Fase 3**: Creación de tabla `InventoryLogs` para trazabilidad y auditoría de ingresos/egresos de stock.
-* [ ] Sistema de Autenticación (Login) para separar vista de Cajeros y Administradores.
-* [ ] Migración a PostgreSQL y Deploy a producción (Vercel/Render).
+* [ ] Exportación a PDF de la Auditoría Financiera de Cierre de Turnos.
+* [ ] Gestión visual del ABM (Alta, Baja y Modificación) de Sabores y Formatos desde la UI.
+* [ ] Persistencia de estados locales (Zustand `persist`) en caso de refrescos accidentales de pestaña.
+* [ ] Autenticación de usuarios (Cajeros vs Administradores).

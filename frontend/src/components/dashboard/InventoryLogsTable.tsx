@@ -15,7 +15,6 @@ export type InventoryLog = {
   product_name: string;
   movement_type: string;
   quantity_changed: number;
-  is_by_weight: boolean;
   created_at: string;
 };
 
@@ -42,21 +41,17 @@ export function InventoryLogsTable({ data }: { data: InventoryLog[] }) {
           {data.map((log) => {
             const date = new Date(log.created_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
             
-            const formatAmount = (amount: number, isWeight: boolean) => {
-                const absAmount = Math.abs(amount);
-                return isWeight ? `${(absAmount / 1000).toFixed(2)} kg` : `${absAmount} un`;
-            };
-
+            const absAmount = Math.abs(log.quantity_changed);
             const isPositive = log.quantity_changed > 0;
-            const amountText = `${isPositive ? '+' : '-'}${formatAmount(log.quantity_changed, log.is_by_weight)}`;
+            const amountText = `${isPositive ? '+' : '-'}${absAmount} un`;
 
             return (
               <TableRow key={log.id} className="hover:bg-gray-50/50 transition-colors">
                 <TableCell className="text-gray-500 text-sm">{date}</TableCell>
                 <TableCell className="font-medium text-gray-900">{log.product_name}</TableCell>
                 <TableCell>
-                  {log.movement_type === 'SALE' ? (
-                     <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">Venta Registrada</Badge>
+                  {log.movement_type === 'SALE_ENVASE' ? (
+                     <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">Venta (Envase)</Badge>
                   ) : log.movement_type === 'MANUAL_ADD' ? (
                      <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50">Ingreso Manual</Badge>
                   ) : (
