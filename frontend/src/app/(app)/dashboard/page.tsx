@@ -2,12 +2,12 @@
 
 import { useEffect } from "react";
 import { useDashboardStore } from "@/store/dashboard-store";
-import { Badge } from "@/components/ui/badge";
+import { DollarSign, Banknote, ArrowRightLeft, AlertCircle, CheckCircle2 } from "lucide-react";
 
-const SHIFT_S: Record<string, { label: string; emoji: string; color: string; bg: string; border: string }> = {
-  MANANA: { label: "Mañana", emoji: "☀️", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
-  TARDE:  { label: "Tarde",  emoji: "🌤️", color: "text-blue-400",  bg: "bg-blue-500/10",  border: "border-blue-500/30" },
-  NOCHE:  { label: "Noche",  emoji: "🌙", color: "text-violet-400",bg: "bg-violet-500/10",border: "border-violet-500/30" },
+const SHIFT_LABELS: Record<string, string> = {
+  MANANA: "Mañana",
+  TARDE: "Tarde",
+  NOCHE: "Noche",
 };
 
 export default function DashboardPage() {
@@ -17,71 +17,78 @@ export default function DashboardPage() {
 
   if (!loaded) return (
     <div className="flex items-center justify-center h-screen">
-      <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-zinc-700 border-t-indigo-500 rounded-full animate-spin" />
     </div>
   );
 
-  const ss = SHIFT_S[activeShift?.shift_type || ""] || SHIFT_S["MANANA"];
   const transferencias = kpis.ventas_del_dia - kpis.efectivo_en_caja;
+
+  const kpiCards = [
+    { label: "Ventas del Día", value: `$${kpis.ventas_del_dia.toLocaleString()}`, icon: DollarSign },
+    { label: "Efectivo en Caja", value: `$${kpis.efectivo_en_caja.toLocaleString()}`, icon: Banknote },
+    { label: "Transferencias", value: `$${transferencias.toLocaleString()}`, icon: ArrowRightLeft },
+    { label: "Alertas Stock", value: stockAlerts.length.toString(), icon: stockAlerts.length > 0 ? AlertCircle : CheckCircle2 },
+  ];
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-500 text-sm">Resumen del día — {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="text-lg font-semibold text-zinc-100">Dashboard</h1>
+          <p className="text-zinc-600 text-xs mt-0.5">{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
         {activeShift ? (
-          <Badge className={`${ss.bg} ${ss.color} border ${ss.border} px-3 py-1.5 text-sm font-semibold`}>
-            {ss.emoji} Turno {ss.label}
-          </Badge>
+          <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-md">
+            Turno {SHIFT_LABELS[activeShift.shift_type] || activeShift.shift_type}
+          </span>
         ) : (
-          <Badge className="bg-slate-800 text-slate-500 border border-white/[0.06] px-3 py-1.5 text-sm">
+          <span className="text-xs font-medium text-zinc-600 bg-zinc-800/50 border border-white/[0.06] px-3 py-1.5 rounded-md">
             Sin turno activo
-          </Badge>
+          </span>
         )}
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          { label: "Ventas del Día", value: `$${kpis.ventas_del_dia.toLocaleString()}`, color: "text-emerald-400", accent: "border-emerald-500/20 bg-emerald-500/5" },
-          { label: "Efectivo en Caja", value: `$${kpis.efectivo_en_caja.toLocaleString()}`, color: "text-amber-400", accent: "border-amber-500/20 bg-amber-500/5" },
-          { label: "Transferencias", value: `$${transferencias.toLocaleString()}`, color: "text-blue-400", accent: "border-blue-500/20 bg-blue-500/5" },
-          { label: "Alertas Stock", value: stockAlerts.length.toString(), color: stockAlerts.length > 0 ? "text-red-400" : "text-slate-400", accent: stockAlerts.length > 0 ? "border-red-500/20 bg-red-500/5" : "border-white/[0.06] bg-white/[0.02]" },
-        ].map((kpi, i) => (
-          <div key={i} className={`rounded-2xl border p-5 ${kpi.accent}`}>
-            <p className="text-slate-500 text-xs font-medium mb-2">{kpi.label}</p>
-            <p className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</p>
-          </div>
-        ))}
+        {kpiCards.map((kpi, i) => {
+          const Icon = kpi.icon;
+          return (
+            <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-zinc-500 text-xs font-medium">{kpi.label}</p>
+                <Icon size={14} className="text-zinc-600" />
+              </div>
+              <p className="text-xl font-semibold text-zinc-100">{kpi.value}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Sales */}
-        <div className="lg:col-span-2 bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
+        <div className="lg:col-span-2 bg-white/[0.02] border border-white/[0.06] rounded-lg overflow-hidden">
           <div className="p-4 border-b border-white/[0.06]">
-            <h2 className="text-white font-bold">Ventas Recientes</h2>
+            <h2 className="text-zinc-200 font-semibold text-sm">Ventas Recientes</h2>
           </div>
           <div className="divide-y divide-white/[0.04]">
             {recentSales.length === 0 ? (
-              <div className="p-8 text-center text-slate-600 text-sm">No hay ventas registradas hoy.</div>
+              <div className="p-8 text-center text-zinc-600 text-sm">No hay ventas registradas hoy.</div>
             ) : (
               recentSales.slice(0, 8).map(sale => (
                 <div key={sale.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm font-medium">
+                    <p className="text-zinc-200 text-sm font-medium">
                       {sale.items.map(i => `${i.quantity > 1 ? `${i.quantity}x ` : ''}${i.format_name}`).join(' + ')}
                     </p>
-                    <p className="text-slate-600 text-xs truncate mt-0.5">
+                    <p className="text-zinc-600 text-xs truncate mt-0.5">
                       {sale.items.flatMap(i => i.flavors).join(' · ')}
                     </p>
                   </div>
                   <div className="text-right shrink-0 ml-3">
-                    <p className="text-emerald-400 font-bold text-sm">${sale.total.toLocaleString()}</p>
-                    <p className="text-slate-600 text-[10px]">
-                      {sale.payment_method === "EFECTIVO" ? "💵" : "📱"}{" "}
+                    <p className="text-zinc-200 font-semibold text-sm">${sale.total.toLocaleString()}</p>
+                    <p className="text-zinc-600 text-[10px]">
+                      {sale.payment_method === "EFECTIVO" ? "Efectivo" : "Transfer."}{" "}
                       {new Date(sale.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -92,25 +99,25 @@ export default function DashboardPage() {
         </div>
 
         {/* Stock Alerts */}
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
+        <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg overflow-hidden">
           <div className="p-4 border-b border-white/[0.06]">
-            <h2 className="text-white font-bold">Alertas de Stock</h2>
+            <h2 className="text-zinc-200 font-semibold text-sm">Alertas de Stock</h2>
           </div>
           <div className="p-3 space-y-2">
             {stockAlerts.length === 0 ? (
               <div className="p-6 text-center">
-                <span className="text-3xl opacity-30 block mb-2">✅</span>
-                <p className="text-slate-600 text-sm">Todo el stock está en orden.</p>
+                <CheckCircle2 size={24} className="text-zinc-700 mx-auto mb-2" />
+                <p className="text-zinc-600 text-sm">Todo el stock está en orden.</p>
               </div>
             ) : (
               stockAlerts.map(item => (
-                <div key={item.id} className="bg-red-500/5 border border-red-500/15 rounded-xl p-3">
+                <div key={item.id} className="bg-red-500/5 border border-red-500/10 rounded-md p-3">
                   <div className="flex justify-between items-center">
-                    <p className="text-white text-sm font-medium">{item.name}</p>
-                    <span className="text-red-400 text-xs font-bold">{item.current_stock} / {item.min_stock}</span>
+                    <p className="text-zinc-200 text-sm font-medium">{item.name}</p>
+                    <span className="text-red-400 text-xs font-semibold">{item.current_stock} / {item.min_stock}</span>
                   </div>
-                  <div className="mt-2 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-500 rounded-full" style={{ width: `${Math.min(100, (item.current_stock / item.min_stock) * 100)}%` }} />
+                  <div className="mt-2 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-red-500/80 rounded-full" style={{ width: `${Math.min(100, (item.current_stock / item.min_stock) * 100)}%` }} />
                   </div>
                 </div>
               ))

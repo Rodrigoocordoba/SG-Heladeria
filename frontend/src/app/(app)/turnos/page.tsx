@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { Sun, CloudSun, Moon, ArrowLeft, X, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Flavor = { id: number; name: string };
 type Weighing = { product_id: number; product_name: string; initial_weight_grams: number };
@@ -14,12 +16,12 @@ type FlavorReport = { product_name: string; initial_grams: number; final_grams: 
 type AuditReport = { shift_id: number; shift_type: string; opened_at: string; closed_at: string; total_sales_count: number; total_sales_amount: number; total_efectivo: number; total_transfer: number; flavors: FlavorReport[] };
 type ClosedShift = { id: number; shift_type: string; opened_at: string; closed_at: string; total_sales: number };
 
-const SS: Record<string, { label: string; emoji: string; color: string; bg: string; border: string }> = {
-  MANANA: { label: "Mañana", emoji: "☀️", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
-  TARDE:  { label: "Tarde",  emoji: "🌤️", color: "text-blue-400",  bg: "bg-blue-500/10",  border: "border-blue-500/30" },
-  NOCHE:  { label: "Noche",  emoji: "🌙", color: "text-violet-400",bg: "bg-violet-500/10",border: "border-violet-500/30" },
+const SHIFT_CONFIG: Record<string, { label: string; icon: typeof Sun }> = {
+  MANANA: { label: "Mañana", icon: Sun },
+  TARDE: { label: "Tarde", icon: CloudSun },
+  NOCHE: { label: "Noche", icon: Moon },
 };
-const s = (t: string) => SS[t] || SS["MANANA"];
+const sc = (t: string) => SHIFT_CONFIG[t] || SHIFT_CONFIG["MANANA"];
 
 type Step = "select_type" | "enter_initial" | "shift_open" | "enter_final" | "report";
 
@@ -36,7 +38,6 @@ export default function TurnosPage() {
   const [viewingAuditId, setViewingAuditId] = useState<number | null>(null);
 
   const fetchData = async () => {
-    // Fetch INDEPENDIENTE — cada endpoint falla por separado
     try {
       const r = await fetch("http://127.0.0.1:8000/products/?category=HELADO");
       if (r.ok) {
@@ -105,72 +106,152 @@ export default function TurnosPage() {
     } catch { toast.error("Error al cargar reporte"); }
   };
 
+  const exportPdf = (report: AuditReport) => {
+    const doc = new jsPDF();
+    doc.text(`Reporte - Turno ${sc(report.shift_type).label} #${report.shift_id}`, 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Apertura: ${new Date(report.opened_at).toLocaleString('es-AR')}`, 14, 28);
+    if (report.closed_at) doc.text(`Cierre: ${new Date(report.closed_at).toLocaleString('es-AR')}`, 14, 34);
+    
+    doc.text(`Ventas: ${report.total_sales_count} | Facturado: $${report.total_sales_amount} | Efectivo: $${report.total_efectivo} | Transferencia: $${report.total_transfer}`, 14, 42);
+
+    autoTable(doc, {
+      startY: 50,
+      head: [["Sabor", "Inicial (kg)", "Final (kg)", "Diferencia (kg)"]],
+      body: report.flavors.map(f => [
+        f.product_name,
+        (f.initial_grams / 1000).toFixed(2),
+        (f.final_grams / 1000).toFixed(2),
+        (f.difference_grams / 1000).toFixed(2)
+      ])
+    });
+    doc.save(`reporte_turno_${report.shift_id}.pdf`);
+  };
+
+  const exportDailyPdf = async () => {
+    try {
+      toast.info("Generando reporte del día...");
+      const r = await fetch(`http://127.0.0.1:8000/shifts/daily`);
+      if (r.ok) {
+        const reports: AuditReport[] = await r.json();
+        if (reports.length === 0) {
+          toast.error("No hay turnos para exportar hoy.");
+          return;
+        }
+
+        const doc = new jsPDF();
+        doc.text(`Reporte Diario Consolidado - ${new Date().toLocaleDateString('es-AR')}`, 14, 20);
+        
+        let startY = 30;
+
+        reports.forEach((report, index) => {
+          if (index > 0) {
+             doc.addPage();
+             startY = 20;
+          }
+
+          doc.setFontSize(12);
+          doc.text(`Turno: ${sc(report.shift_type).label}`, 14, startY);
+          
+          doc.setFontSize(10);
+          doc.text(`Ventas: ${report.total_sales_count} | Facturado: $${report.total_sales_amount} | Efectivo: $${report.total_efectivo} | Transferencia: $${report.total_transfer}`, 14, startY + 8);
+          
+          autoTable(doc, {
+            startY: startY + 16,
+            head: [["Sabor", "Inicial (kg)", "Final (kg)", "Diferencia (kg)"]],
+            body: report.flavors.map(f => [
+              f.product_name,
+              (f.initial_grams / 1000).toFixed(2),
+              (f.final_grams / 1000).toFixed(2),
+              (f.difference_grams / 1000).toFixed(2)
+            ])
+          });
+          
+          startY = (doc as any).lastAutoTable.finalY + 20;
+        });
+
+        doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success("Reporte descargado.");
+      } else {
+        toast.error("Error al obtener los turnos del día.");
+      }
+    } catch {
+      toast.error("Error al generar reporte diario");
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center h-screen">
-      <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
+      <div className="w-6 h-6 border-2 border-zinc-700 border-t-indigo-500 rounded-full animate-spin" />
     </div>
   );
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="p-6 space-y-5 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Control de Turnos</h1>
-          <p className="text-slate-500 text-sm">Pesaje de baldes y auditoría de consumo.</p>
+          <h1 className="text-lg font-semibold text-zinc-100">Control de Turnos</h1>
+          <p className="text-zinc-600 text-xs mt-0.5">Pesaje de baldes y auditoría de consumo.</p>
         </div>
         {activeShift && (
-          <Badge className={`${s(activeShift.shift_type).bg} ${s(activeShift.shift_type).color} border ${s(activeShift.shift_type).border} px-3 py-1.5 text-sm font-semibold`}>
-            ● Turno {s(activeShift.shift_type).label}
-          </Badge>
+          <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-md">
+            Turno {sc(activeShift.shift_type).label}
+          </span>
         )}
       </div>
 
       {/* ==================== PASO 1: ELEGIR TURNO ==================== */}
       {step === "select_type" && !activeShift && (
-        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-8 text-center space-y-6">
+        <div className="bg-white/[0.02] rounded-lg border border-white/[0.06] p-8 text-center space-y-6">
           <div>
-            <h2 className="text-xl font-semibold text-white">Seleccione el turno a abrir</h2>
-            <p className="text-slate-500 text-sm mt-2">Elija el horario para registrar el inicio del turno.</p>
+            <h2 className="text-base font-semibold text-zinc-200">Seleccione el turno a abrir</h2>
+            <p className="text-zinc-600 text-xs mt-1">Elija el horario para registrar el inicio del turno.</p>
           </div>
-          <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
-            {(["MANANA", "TARDE", "NOCHE"] as const).map(type => (
-              <button key={type} onClick={() => handleSelectType(type)}
-                className="p-6 rounded-2xl border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.04]
-                           transition-all duration-200 hover:-translate-y-1 active:scale-95 group touch-manipulation">
-                <span className="text-3xl block mb-2">{s(type).emoji}</span>
-                <span className="block font-semibold text-slate-400 group-hover:text-white transition-colors">{s(type).label}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
+            {(["MANANA", "TARDE", "NOCHE"] as const).map(type => {
+              const config = sc(type);
+              const Icon = config.icon;
+              return (
+                <button key={type} onClick={() => handleSelectType(type)}
+                  className="p-5 rounded-lg border border-white/[0.06] hover:border-indigo-500/40 hover:bg-indigo-500/[0.04]
+                             transition-all duration-200 active:scale-[0.97] group">
+                  <Icon size={24} className="mx-auto mb-2 text-zinc-500 group-hover:text-indigo-400 transition-colors" />
+                  <span className="block font-medium text-sm text-zinc-400 group-hover:text-zinc-200 transition-colors">{config.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* ==================== PASO 2: PESOS INICIALES ==================== */}
       {step === "enter_initial" && !activeShift && (
-        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-6 space-y-5">
+        <div className="bg-white/[0.02] rounded-lg border border-white/[0.06] p-6 space-y-5">
           <div>
-            <button onClick={() => setStep("select_type")} className="text-slate-500 hover:text-white text-sm mb-2 block touch-manipulation">← Volver</button>
-            <h2 className="text-lg font-semibold text-white">
-              Turno {s(shiftType).emoji} {s(shiftType).label} — Pesos Iniciales
+            <button onClick={() => setStep("select_type")} className="text-zinc-600 hover:text-zinc-300 text-xs mb-2 flex items-center gap-1 transition-colors">
+              <ArrowLeft size={12} /> Volver
+            </button>
+            <h2 className="text-base font-semibold text-zinc-200">
+              Turno {sc(shiftType).label} — Pesos Iniciales
             </h2>
-            <p className="text-sm text-slate-500 mt-1">Pese cada balde e ingrese el peso en gramos.</p>
+            <p className="text-xs text-zinc-600 mt-1">Pese cada balde e ingrese el peso en gramos.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {flavors.map(f => (
-              <div key={f.id} className="bg-slate-800/50 rounded-xl p-4 border border-white/[0.06]">
-                <Label className="text-slate-300 text-sm font-medium">{f.name}</Label>
+              <div key={f.id} className="bg-zinc-900/50 rounded-md p-4 border border-white/[0.06]">
+                <Label className="text-zinc-400 text-xs font-medium">{f.name}</Label>
                 <div className="mt-2">
                   <Input type="number" min="0" step="1" placeholder="Peso en gramos (ej: 5000)"
                     value={weights[f.id] || ""} onChange={e => setWeights(p => ({ ...p, [f.id]: e.target.value }))}
-                    className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-600 focus:border-violet-500" />
+                    className="bg-zinc-900 border-zinc-800 text-zinc-200 placeholder:text-zinc-700 focus:border-indigo-500 text-sm" />
                 </div>
               </div>
             ))}
           </div>
           <Button onClick={handleOpenShift} disabled={submitting}
-            className="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-3 text-base touch-manipulation">
-            {submitting ? "Abriendo..." : `Abrir Turno ${s(shiftType).label}`}
+            className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-3 text-sm rounded-md">
+            {submitting ? "Abriendo..." : `Abrir Turno ${sc(shiftType).label}`}
           </Button>
         </div>
       )}
@@ -178,29 +259,29 @@ export default function TurnosPage() {
       {/* ==================== TURNO ABIERTO ==================== */}
       {step === "shift_open" && activeShift && (
         <div className="space-y-4">
-          <div className={`rounded-2xl border p-6 ${s(activeShift.shift_type).border} ${s(activeShift.shift_type).bg}`}>
+          <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/[0.04] p-5">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className={`text-lg font-bold ${s(activeShift.shift_type).color}`}>
-                  {s(activeShift.shift_type).emoji} Turno {s(activeShift.shift_type).label} en curso
+                <h2 className="text-sm font-semibold text-indigo-400">
+                  Turno {sc(activeShift.shift_type).label} en curso
                 </h2>
-                <p className="text-slate-400 text-sm mt-1">
+                <p className="text-zinc-500 text-xs mt-1">
                   Abierto: {new Date(activeShift.opened_at).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })}
                 </p>
               </div>
               <Button onClick={() => { setWeights({}); setStep("enter_final"); }} variant="outline"
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10 touch-manipulation">
+                className="border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs rounded-md">
                 Cerrar Turno
               </Button>
             </div>
           </div>
-          <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-5">
-            <h3 className="text-white font-semibold mb-3 text-sm">Pesos iniciales registrados</h3>
+          <div className="bg-white/[0.02] rounded-lg border border-white/[0.06] p-5">
+            <h3 className="text-zinc-300 font-medium mb-3 text-xs uppercase tracking-wider">Pesos iniciales registrados</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {activeShift.weighings.map(w => (
-                <div key={w.product_id} className="bg-slate-800/50 rounded-xl p-3 border border-white/[0.06] text-center">
-                  <p className="text-slate-500 text-xs mb-1">{w.product_name}</p>
-                  <p className="text-white font-bold">{(w.initial_weight_grams / 1000).toFixed(2)}<span className="text-slate-600 text-xs ml-0.5">kg</span></p>
+                <div key={w.product_id} className="bg-zinc-900/50 rounded-md p-3 border border-white/[0.06] text-center">
+                  <p className="text-zinc-600 text-[11px] mb-1">{w.product_name}</p>
+                  <p className="text-zinc-200 font-semibold text-sm">{(w.initial_weight_grams / 1000).toFixed(2)}<span className="text-zinc-600 text-[11px] ml-0.5">kg</span></p>
                 </div>
               ))}
             </div>
@@ -210,27 +291,29 @@ export default function TurnosPage() {
 
       {/* ==================== PASO 3: PESOS FINALES ==================== */}
       {step === "enter_final" && activeShift && (
-        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-6 space-y-5">
+        <div className="bg-white/[0.02] rounded-lg border border-white/[0.06] p-6 space-y-5">
           <div>
-            <button onClick={() => setStep("shift_open")} className="text-slate-500 hover:text-white text-sm mb-2 block touch-manipulation">← Volver al turno</button>
-            <h2 className="text-lg font-semibold text-white">Cerrar Turno — Pesos Finales</h2>
-            <p className="text-sm text-slate-500 mt-1">Pese cada balde para calcular el consumo real.</p>
+            <button onClick={() => setStep("shift_open")} className="text-zinc-600 hover:text-zinc-300 text-xs mb-2 flex items-center gap-1 transition-colors">
+              <ArrowLeft size={12} /> Volver al turno
+            </button>
+            <h2 className="text-base font-semibold text-zinc-200">Cerrar Turno — Pesos Finales</h2>
+            <p className="text-xs text-zinc-600 mt-1">Pese cada balde para calcular el consumo real.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {activeShift.weighings.map(w => (
-              <div key={w.product_id} className="bg-slate-800/50 rounded-xl p-4 border border-white/[0.06]">
-                <Label className="text-slate-300 text-sm font-medium">{w.product_name}</Label>
-                <p className="text-xs text-slate-600 mt-0.5 mb-2">
-                  Inicio: <span className="text-violet-400 font-semibold">{(w.initial_weight_grams / 1000).toFixed(2)} kg</span>
+              <div key={w.product_id} className="bg-zinc-900/50 rounded-md p-4 border border-white/[0.06]">
+                <Label className="text-zinc-400 text-xs font-medium">{w.product_name}</Label>
+                <p className="text-[11px] text-zinc-600 mt-0.5 mb-2">
+                  Inicio: <span className="text-indigo-400 font-medium">{(w.initial_weight_grams / 1000).toFixed(2)} kg</span>
                 </p>
                 <Input type="number" min="0" step="1" placeholder="Peso final en gramos"
                   value={weights[w.product_id] || ""} onChange={e => setWeights(p => ({ ...p, [w.product_id]: e.target.value }))}
-                  className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-600 focus:border-red-500" />
+                  className="bg-zinc-900 border-zinc-800 text-zinc-200 placeholder:text-zinc-700 focus:border-red-500 text-sm" />
               </div>
             ))}
           </div>
           <Button onClick={handleCloseShift} disabled={submitting}
-            className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 text-base touch-manipulation">
+            className="w-full bg-red-600 hover:bg-red-500 text-white font-medium py-3 text-sm rounded-md">
             {submitting ? "Cerrando..." : "Cerrar Turno y Generar Reporte"}
           </Button>
         </div>
@@ -238,25 +321,32 @@ export default function TurnosPage() {
 
       {/* ==================== REPORTE ==================== */}
       {auditReport && (
-        <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-6 space-y-5">
+        <div className="bg-white/[0.02] rounded-lg border border-white/[0.06] p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">
-              Reporte — Turno {s(auditReport.shift_type).label} #{auditReport.shift_id}
+            <h2 className="text-sm font-semibold text-zinc-200">
+              Reporte — Turno {sc(auditReport.shift_type).label} #{auditReport.shift_id}
             </h2>
-            <button onClick={() => { setAuditReport(null); setViewingAuditId(null); if (!activeShift) setStep("select_type"); else setStep("shift_open"); }}
-              className="text-slate-500 hover:text-white text-sm touch-manipulation">✕</button>
+            <div className="flex items-center gap-3">
+              <Button onClick={() => exportPdf(auditReport)} variant="outline" size="sm" className="h-7 px-2 text-xs text-indigo-400 border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20 hover:text-indigo-300">
+                <Download size={12} className="mr-1.5" /> PDF
+              </Button>
+              <button onClick={() => { setAuditReport(null); setViewingAuditId(null); if (!activeShift) setStep("select_type"); else setStep("shift_open"); }}
+                className="text-zinc-600 hover:text-zinc-300 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Ventas", value: auditReport.total_sales_count.toString(), color: "text-white", accent: "border-white/[0.06] bg-white/[0.02]" },
-              { label: "Facturado", value: `$${auditReport.total_sales_amount.toLocaleString()}`, color: "text-emerald-400", accent: "border-emerald-500/20 bg-emerald-500/5" },
-              { label: "Efectivo", value: `$${auditReport.total_efectivo.toLocaleString()}`, color: "text-amber-400", accent: "border-amber-500/20 bg-amber-500/5" },
-              { label: "Transferencias", value: `$${auditReport.total_transfer.toLocaleString()}`, color: "text-blue-400", accent: "border-blue-500/20 bg-blue-500/5" },
+              { label: "Ventas", value: auditReport.total_sales_count.toString() },
+              { label: "Facturado", value: `$${auditReport.total_sales_amount.toLocaleString()}` },
+              { label: "Efectivo", value: `$${auditReport.total_efectivo.toLocaleString()}` },
+              { label: "Transferencias", value: `$${auditReport.total_transfer.toLocaleString()}` },
             ].map((k, i) => (
-              <div key={i} className={`rounded-xl border p-4 text-center ${k.accent}`}>
-                <p className="text-slate-500 text-xs mb-1">{k.label}</p>
-                <p className={`text-xl font-bold ${k.color}`}>{k.value}</p>
+              <div key={i} className="rounded-md border border-white/[0.06] bg-white/[0.02] p-3 text-center">
+                <p className="text-zinc-600 text-[11px] mb-1">{k.label}</p>
+                <p className="text-lg font-semibold text-zinc-200">{k.value}</p>
               </div>
             ))}
           </div>
@@ -265,24 +355,20 @@ export default function TurnosPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-slate-500">
-                    <th className="text-left py-3 px-2 font-semibold">Sabor</th>
-                    <th className="text-right py-3 px-2 font-semibold">Inicial</th>
-                    <th className="text-right py-3 px-2 font-semibold">Final</th>
-                    <th className="text-right py-3 px-2 font-semibold">Real</th>
-                    <th className="text-right py-3 px-2 font-semibold">Teórico</th>
-                    <th className="text-right py-3 px-2 font-semibold">Diferencia</th>
+                  <tr className="border-b border-white/[0.06] text-zinc-500">
+                    <th className="text-left py-2.5 px-2 font-medium text-xs">Sabor</th>
+                    <th className="text-right py-2.5 px-2 font-medium text-xs">Inicial</th>
+                    <th className="text-right py-2.5 px-2 font-medium text-xs">Final</th>
+                    <th className="text-right py-2.5 px-2 font-medium text-xs">Diferencia</th>
                   </tr>
                 </thead>
                 <tbody>
                   {auditReport.flavors.map((f, i) => (
                     <tr key={i} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
-                      <td className="py-3 px-2 text-white font-medium">{f.product_name}</td>
-                      <td className="py-3 px-2 text-right text-slate-400">{(f.initial_grams / 1000).toFixed(2)} kg</td>
-                      <td className="py-3 px-2 text-right text-slate-400">{(f.final_grams / 1000).toFixed(2)} kg</td>
-                      <td className="py-3 px-2 text-right text-violet-400 font-semibold">{(f.real_consumption_grams / 1000).toFixed(2)} kg</td>
-                      <td className="py-3 px-2 text-right text-blue-400 font-semibold">{(f.theoretical_grams / 1000).toFixed(2)} kg</td>
-                      <td className={`py-3 px-2 text-right font-bold ${f.difference_grams > 0 ? 'text-red-400' : f.difference_grams < 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                      <td className="py-2.5 px-2 text-zinc-300 font-medium text-xs">{f.product_name}</td>
+                      <td className="py-2.5 px-2 text-right text-zinc-500 text-xs">{(f.initial_grams / 1000).toFixed(2)} kg</td>
+                      <td className="py-2.5 px-2 text-right text-zinc-500 text-xs">{(f.final_grams / 1000).toFixed(2)} kg</td>
+                      <td className={`py-2.5 px-2 text-right font-semibold text-xs ${f.difference_grams > 0 ? 'text-red-400' : f.difference_grams < 0 ? 'text-emerald-400' : 'text-zinc-600'}`}>
                         {f.difference_grams > 0 ? '+' : ''}{(f.difference_grams / 1000).toFixed(2)} kg
                       </td>
                     </tr>
@@ -290,9 +376,9 @@ export default function TurnosPage() {
                 </tbody>
               </table>
             </div>
-          ) : <p className="text-slate-600 text-center py-4 text-sm">No hubo ventas durante este turno.</p>}
+          ) : <p className="text-zinc-600 text-center py-4 text-xs">No hubo ventas durante este turno.</p>}
 
-          <p className="text-xs text-slate-600 text-center pt-2 border-t border-white/[0.06]">
+          <p className="text-[11px] text-zinc-700 text-center pt-2 border-t border-white/[0.06]">
             Abierto: {new Date(auditReport.opened_at).toLocaleString('es-AR')} — Cerrado: {auditReport.closed_at ? new Date(auditReport.closed_at).toLocaleString('es-AR') : '...'}
           </p>
         </div>
@@ -300,26 +386,29 @@ export default function TurnosPage() {
 
       {/* ==================== HISTORIAL ==================== */}
       {closedShifts.length > 0 && (
-        <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl overflow-hidden">
-          <div className="p-4 border-b border-white/[0.06]">
-            <h2 className="text-white font-bold">Historial de Turnos</h2>
+        <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg overflow-hidden">
+          <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+            <h2 className="text-zinc-200 font-semibold text-sm">Historial de Turnos</h2>
+            <Button onClick={exportDailyPdf} variant="outline" size="sm" className="h-7 px-2 text-xs text-zinc-400 border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:text-zinc-200">
+              <Download size={12} className="mr-1.5" /> Reporte Diario
+            </Button>
           </div>
           <div className="divide-y divide-white/[0.04]">
             {closedShifts.map(sh => (
               <div key={sh.id} className="px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
                 <div className="flex items-center gap-3">
-                  <Badge className={`${s(sh.shift_type).bg} ${s(sh.shift_type).color} border ${s(sh.shift_type).border} text-xs`}>{s(sh.shift_type).label}</Badge>
+                  <span className="text-[11px] font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded">{sc(sh.shift_type).label}</span>
                   <div>
-                    <p className="text-white text-sm font-medium">Turno #{sh.id}</p>
-                    <p className="text-slate-600 text-xs">
+                    <p className="text-zinc-300 text-sm font-medium">Turno #{sh.id}</p>
+                    <p className="text-zinc-700 text-[11px]">
                       {new Date(sh.opened_at).toLocaleDateString('es-AR')} — {new Date(sh.opened_at).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'})} a {sh.closed_at ? new Date(sh.closed_at).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '...'}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-emerald-400 font-bold text-sm">${sh.total_sales.toLocaleString()}</span>
+                  <span className="text-zinc-300 font-semibold text-sm">${sh.total_sales.toLocaleString()}</span>
                   <Button variant="outline" size="sm" onClick={() => handleViewAudit(sh.id)}
-                    className="text-xs border-slate-700 text-slate-400 hover:bg-white/[0.05] touch-manipulation">
+                    className="text-xs border-zinc-800 text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] rounded-md">
                     {viewingAuditId === sh.id ? "Ocultar" : "Reporte"}
                   </Button>
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { usePOSStore } from "@/store/pos-store";
 import { toast } from "sonner";
+import { Banknote, Smartphone } from "lucide-react";
 
 export function PaymentModal() {
   const {
@@ -41,43 +42,45 @@ export function PaymentModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
          onClick={closePayment}>
-      <div className="bg-slate-900 border border-white/[0.1] rounded-2xl w-full max-w-sm p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200"
+      <div className="bg-[oklch(0.17_0.005_260)] border border-white/[0.08] rounded-lg w-full max-w-sm p-6 space-y-5 shadow-2xl animate-in zoom-in-95 duration-200"
            onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="text-center">
-          <h3 className="text-white font-bold text-xl">Confirmar Cobro</h3>
-          <p className="text-emerald-400 font-bold text-3xl mt-2">${total.toLocaleString()}</p>
-          <p className="text-slate-500 text-xs mt-1">
+          <h3 className="text-zinc-200 font-semibold text-base">Confirmar Cobro</h3>
+          <p className="text-zinc-100 font-bold text-2xl mt-2">${total.toLocaleString()}</p>
+          <p className="text-zinc-600 text-xs mt-1">
             {cart.reduce((s, i) => s + i.quantity, 0)} items en el pedido
           </p>
         </div>
 
         {/* Payment method */}
         <div className="space-y-2">
-          <p className="text-slate-400 text-sm font-semibold">Método de pago</p>
+          <p className="text-zinc-500 text-xs font-medium">Método de pago</p>
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setPaymentMethod("EFECTIVO")}
-              className={`py-4 rounded-xl border-2 font-semibold text-sm transition-all touch-manipulation active:scale-95 ${
+              className={`py-3.5 rounded-md border font-medium text-sm transition-all active:scale-[0.97] flex flex-col items-center gap-1.5 ${
                 paymentMethod === "EFECTIVO"
-                  ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
-                  : "border-white/[0.08] text-slate-500 hover:border-white/[0.15]"
+                  ? "border-indigo-500 bg-indigo-500/10 text-indigo-400"
+                  : "border-white/[0.06] text-zinc-500 hover:border-zinc-600"
               }`}
             >
-              💵 Efectivo
-              <span className="block text-[10px] mt-1 opacity-60">Tecla E</span>
+              <Banknote size={18} />
+              Efectivo
+              <span className="text-[10px] opacity-50 font-normal">Tecla E</span>
             </button>
             <button
               onClick={() => setPaymentMethod("TRANSFERENCIA")}
-              className={`py-4 rounded-xl border-2 font-semibold text-sm transition-all touch-manipulation active:scale-95 ${
+              className={`py-3.5 rounded-md border font-medium text-sm transition-all active:scale-[0.97] flex flex-col items-center gap-1.5 ${
                 paymentMethod === "TRANSFERENCIA"
-                  ? "border-blue-500 bg-blue-500/10 text-blue-400"
-                  : "border-white/[0.08] text-slate-500 hover:border-white/[0.15]"
+                  ? "border-indigo-500 bg-indigo-500/10 text-indigo-400"
+                  : "border-white/[0.06] text-zinc-500 hover:border-zinc-600"
               }`}
             >
-              📱 Transferencia
-              <span className="block text-[10px] mt-1 opacity-60">Tecla T</span>
+              <Smartphone size={18} />
+              Transferencia
+              <span className="text-[10px] opacity-50 font-normal">Tecla T</span>
             </button>
           </div>
         </div>
@@ -87,14 +90,14 @@ export function PaymentModal() {
           <button
             onClick={handleConfirm}
             disabled={isSubmitting}
-            className="w-full py-4 rounded-xl font-bold text-base bg-emerald-600 hover:bg-emerald-500 text-white
-                       transition-all touch-manipulation active:scale-[0.98] disabled:opacity-50 shadow-lg"
+            className="w-full py-3 rounded-md font-medium text-sm bg-indigo-600 hover:bg-indigo-500 text-white
+                       transition-all active:scale-[0.98] disabled:opacity-50"
           >
             {isSubmitting ? "Procesando..." : `Cobrar $${total.toLocaleString()}`}
           </button>
           <button
             onClick={closePayment}
-            className="w-full py-3 rounded-xl text-slate-500 hover:text-slate-300 text-sm transition-colors touch-manipulation"
+            className="w-full py-2.5 rounded-md text-zinc-600 hover:text-zinc-400 text-xs transition-colors"
           >
             Cancelar (Esc)
           </button>

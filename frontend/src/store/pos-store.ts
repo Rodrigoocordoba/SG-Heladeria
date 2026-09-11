@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 // ============================================================================
 // TYPES
@@ -77,7 +78,9 @@ const uid = () => Math.random().toString(36).substring(2, 9);
 
 const API = "http://127.0.0.1:8000";
 
-export const usePOSStore = create<POSStore>((set, get) => ({
+export const usePOSStore = create<POSStore>()(
+  persist(
+    (set, get) => ({
   // --- Initial State ---
   formats: [],
   flavors: [],
@@ -229,4 +232,10 @@ export const usePOSStore = create<POSStore>((set, get) => ({
       set({ isSubmitting: false });
     }
   },
-}));
+}),
+    {
+      name: "sg-pos-storage",
+      partialize: (state) => ({ cart: state.cart }),
+    }
+  )
+);
