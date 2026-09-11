@@ -34,9 +34,9 @@ export function POSSaleModal({
   onSuccess: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [selectedFormatId, setSelectedFormatId] = useState<string>("");
+  const [selectedFormatId, setSelectedFormatId] = useState<string>("`);
   const [selectedFlavors, setSelectedFlavors] = useState<number[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<string>("EFECTIVO");
+  const [paymentMethod, setPaymentMethod] = useState<string>("EFECTIVO`);
   const [loading, setLoading] = useState(false);
 
   const selectedFormat = formats.find(f => f.id.toString() === selectedFormatId);
@@ -57,24 +57,24 @@ export function POSSaleModal({
 
   const handleTryOpen = (isOpen: boolean) => {
     if (isOpen && !shiftId) {
-      toast.error("No hay un turno abierto. Abra un turno desde la seccion Turnos antes de vender.", { duration: 4000 });
+      toast.error("No hay un turno abierto. Abra un turno desde la seccion Turnos antes de vender.`, { duration: 4000 });
       return;
     }
     setOpen(isOpen);
     if (!isOpen) {
-      setSelectedFormatId("");
+      setSelectedFormatId("`);
       setSelectedFlavors([]);
-      setPaymentMethod("EFECTIVO");
+      setPaymentMethod("EFECTIVO`);
     }
   };
 
   const handleSubmit = async () => {
-    if (!selectedFormatId) { toast.error("Seleccione un formato de venta."); return; }
-    if (selectedFlavors.length === 0) { toast.error("Seleccione al menos un sabor."); return; }
+    if (!selectedFormatId) { toast.error("Seleccione un formato de venta.`); return; }
+    if (selectedFlavors.length === 0) { toast.error("Seleccione al menos un sabor.`); return; }
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/sales/", {
+      const response = await fetch(`${API_URL}/sales/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -91,9 +91,9 @@ export function POSSaleModal({
       if (response.ok) {
         const data = await response.json();
         setOpen(false);
-        setSelectedFormatId("");
+        setSelectedFormatId("`);
         setSelectedFlavors([]);
-        setPaymentMethod("EFECTIVO");
+        setPaymentMethod("EFECTIVO`);
         const label = paymentMethod === "EFECTIVO" ? "Efectivo" : "Transferencia";
         toast.success(`Venta registrada — $${data.total.toFixed(2)} (${label})`);
         onSuccess();
@@ -103,7 +103,7 @@ export function POSSaleModal({
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error de conexion con el servidor");
+      toast.error("Error de conexion con el servidor`);
     } finally {
       setLoading(false);
     }

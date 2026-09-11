@@ -12,24 +12,24 @@ import { toast } from "sonner";
 
 export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
-  const [productId, setProductId] = useState<string>("");
-  const [quantity, setQuantity] = useState("");
+  const [productId, setProductId] = useState<string>("`);
+  const [quantity, setQuantity] = useState("`);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productId) {
-      toast.error("Por favor, seleccione un producto.");
+      toast.error("Por favor, seleccione un producto.`);
       return;
     }
     if (!quantity) {
-      toast.error("Por favor, ingrese una cantidad.");
+      toast.error("Por favor, ingrese una cantidad.`);
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/sales/", {
+      const response = await fetch(`${API_URL}/sales/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,9 +43,9 @@ export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuc
 
       if (response.ok) {
         setOpen(false);
-        setProductId("");
-        setQuantity("");
-        toast.success("Venta registrada con éxito");
+        setProductId("`);
+        setQuantity("`);
+        toast.success("Venta registrada con éxito`);
         onSuccess();
       } else {
         const errorData = await response.json();
@@ -53,7 +53,7 @@ export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuc
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error de conexión con el servidor");
+      toast.error("Error de conexión con el servidor`);
     } finally {
       setLoading(false);
     }
