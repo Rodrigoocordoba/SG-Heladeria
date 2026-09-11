@@ -19,18 +19,18 @@ export type InventoryItemSimple = {
 
 export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryItemSimple[], onSuccess: () => void }) {
   const [open, setOpen] = useState(false);
-  const [productId, setProductId] = useState<string>("`);
-  const [quantity, setQuantity] = useState("`);
+  const [productId, setProductId] = useState<string>("");
+  const [quantity, setQuantity] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!productId) {
-      toast.error("Por favor, seleccione un producto.`);
+      toast.error("Por favor, seleccione un producto.");
       return;
     }
     if (!quantity) {
-      toast.error("Por favor, ingrese una cantidad.`);
+      toast.error("Por favor, ingrese una cantidad.");
       return;
     }
 
@@ -46,9 +46,9 @@ export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryIt
 
       if (response.ok) {
         setOpen(false);
-        setProductId("`);
-        setQuantity("`);
-        toast.success("Stock ingresado correctamente`);
+        setProductId("");
+        setQuantity("");
+        toast.success("Stock ingresado correctamente");
         onSuccess();
       } else {
         const errorData = await response.json();
@@ -56,7 +56,7 @@ export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryIt
       }
     } catch (error) {
       console.error(error);
-      toast.error("Error de conexión con el servidor`);
+      toast.error("Error de conexión con el servidor");
     } finally {
       setLoading(false);
     }

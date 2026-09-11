@@ -26,13 +26,13 @@ export default function PedidoPage() {
 
   const fetchProducts = async () => {
     try {
-      const r = await fetch(`${API_URL}/products/`);
+      const r = await fetch(`${API_URL}/products/");
       if (r.ok) {
         setProducts(await r.json());
       }
     } catch (e) {
       console.error(e);
-      toast.error("Error al cargar productos.`);
+      toast.error("Error al cargar productos.");
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function PedidoPage() {
   const generatePDF = () => {
     const selectedIds = Object.keys(quantities).map(Number);
     if (selectedIds.length === 0) {
-      toast.error("Seleccione al menos un producto para pedir.`);
+      toast.error("Seleccione al menos un producto para pedir.");
       return;
     }
 
@@ -76,8 +76,8 @@ export default function PedidoPage() {
     
     // Agrupar por categoría
     const selectedProducts = products.filter(p => selectedIds.includes(p.id));
-    const helados = selectedProducts.filter(p => p.category === "HELADO`);
-    const otros = selectedProducts.filter(p => p.category !== "HELADO`);
+    const helados = selectedProducts.filter(p => p.category === "HELADO");
+    const otros = selectedProducts.filter(p => p.category !== "HELADO");
 
     let currentY = 30;
 
@@ -107,7 +107,7 @@ export default function PedidoPage() {
     }
 
     doc.save(`Pedido_${new Date().toISOString().split('T')[0]}.pdf`);
-    toast.success("PDF generado exitosamente.`);
+    toast.success("PDF generado exitosamente.");
   };
 
   if (loading) {
@@ -118,8 +118,8 @@ export default function PedidoPage() {
     );
   }
 
-  const helados = products.filter(p => p.category === "HELADO`);
-  const insumos = products.filter(p => p.category !== "HELADO`);
+  const helados = products.filter(p => p.category === "HELADO");
+  const insumos = products.filter(p => p.category !== "HELADO");
 
   const totalItems = Object.values(quantities).reduce((a, b) => a + b, 0);
 

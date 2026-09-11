@@ -30,8 +30,8 @@ export default function TurnosPage() {
   const [flavors, setFlavors] = useState<Flavor[]>([]);
   const [activeShift, setActiveShift] = useState<ActiveShift>(null);
   const [closedShifts, setClosedShifts] = useState<ClosedShift[]>([]);
-  const [step, setStep] = useState<Step>("select_type`);
-  const [shiftType, setShiftType] = useState("`);
+  const [step, setStep] = useState<Step>("select_type");
+  const [shiftType, setShiftType] = useState("");
   const [weights, setWeights] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +40,7 @@ export default function TurnosPage() {
 
   const fetchData = async () => {
     try {
-      const r = await fetch(`${API_URL}/products/?category=HELADO`);
+      const r = await fetch(`${API_URL}/products/?category=HELADO");
       if (r.ok) {
         const prods = await r.json();
         setFlavors(prods.map((p: any) => ({ id: p.id, name: p.name })));
@@ -48,16 +48,16 @@ export default function TurnosPage() {
     } catch (e) { console.error("Error sabores:", e); }
 
     try {
-      const r = await fetch(`${API_URL}/shifts/active`);
+      const r = await fetch(`${API_URL}/shifts/active");
       if (r.ok) {
         const data = await r.json();
         setActiveShift(data.shift || null);
-        if (data.shift) setStep("shift_open`);
+        if (data.shift) setStep("shift_open");
       }
     } catch (e) { console.error("Error turno:", e); }
 
     try {
-      const r = await fetch(`${API_URL}/shifts/history`);
+      const r = await fetch(`${API_URL}/shifts/history");
       if (r.ok) setClosedShifts(await r.json());
     } catch (e) { console.error("Error historial:", e); }
 
@@ -66,36 +66,36 @@ export default function TurnosPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  const handleSelectType = (type: string) => { setShiftType(type); setWeights({}); setStep("enter_initial`); };
+  const handleSelectType = (type: string) => { setShiftType(type); setWeights({}); setStep("enter_initial"); };
 
   const handleOpenShift = async () => {
     const w = Object.entries(weights).filter(([_, v]) => v !== "").map(([pid, v]) => ({ product_id: parseInt(pid), weight_grams: parseFloat(v) }));
-    if (w.length === 0) { toast.error("Ingrese al menos un peso inicial.`); return; }
+    if (w.length === 0) { toast.error("Ingrese al menos un peso inicial."); return; }
     setSubmitting(true);
     try {
-      const r = await fetch(`${API_URL}/shifts/open`, {
+      const r = await fetch(`${API_URL}/shifts/open", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shift_type: shiftType, weighings: w })
       });
-      if (r.ok) { toast.success("Turno abierto`); setWeights({}); fetchData(); }
+      if (r.ok) { toast.success("Turno abierto"); setWeights({}); fetchData(); }
       else { const e = await r.json(); toast.error(e.detail); }
-    } catch { toast.error("Error de conexion`); }
+    } catch { toast.error("Error de conexion"); }
     finally { setSubmitting(false); }
   };
 
   const handleCloseShift = async () => {
     if (!activeShift) return;
     const w = Object.entries(weights).filter(([_, v]) => v !== "").map(([pid, v]) => ({ product_id: parseInt(pid), weight_grams: parseFloat(v) }));
-    if (w.length === 0) { toast.error("Ingrese al menos un peso final.`); return; }
+    if (w.length === 0) { toast.error("Ingrese al menos un peso final."); return; }
     setSubmitting(true);
     try {
       const r = await fetch(`${API_URL}/shifts/${activeShift.id}/close`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weighings: w })
       });
-      if (r.ok) { const report = await r.json(); setAuditReport(report); toast.success("Turno cerrado`); setWeights({}); setStep("report`); fetchData(); }
+      if (r.ok) { const report = await r.json(); setAuditReport(report); toast.success("Turno cerrado"); setWeights({}); setStep("report"); fetchData(); }
       else { const e = await r.json(); toast.error(e.detail); }
-    } catch { toast.error("Error de conexion`); }
+    } catch { toast.error("Error de conexion"); }
     finally { setSubmitting(false); }
   };
 
@@ -103,8 +103,8 @@ export default function TurnosPage() {
     if (viewingAuditId === id) { setViewingAuditId(null); setAuditReport(null); return; }
     try {
       const r = await fetch(`${API_URL}/shifts/${id}/audit`);
-      if (r.ok) { setAuditReport(await r.json()); setViewingAuditId(id); setStep("report`); }
-    } catch { toast.error("Error al cargar reporte`); }
+      if (r.ok) { setAuditReport(await r.json()); setViewingAuditId(id); setStep("report"); }
+    } catch { toast.error("Error al cargar reporte"); }
   };
 
   const exportPdf = (report: AuditReport) => {
@@ -131,12 +131,12 @@ export default function TurnosPage() {
 
   const exportDailyPdf = async () => {
     try {
-      toast.info("Generando reporte del día...`);
+      toast.info("Generando reporte del día...");
       const r = await fetch(`${API_URL}/shifts/daily`);
       if (r.ok) {
         const reports: AuditReport[] = await r.json();
         if (reports.length === 0) {
-          toast.error("No hay turnos para exportar hoy.`);
+          toast.error("No hay turnos para exportar hoy.");
           return;
         }
 
@@ -172,12 +172,12 @@ export default function TurnosPage() {
         });
 
         doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success("Reporte descargado.`);
+        toast.success("Reporte descargado.");
       } else {
-        toast.error("Error al obtener los turnos del día.`);
+        toast.error("Error al obtener los turnos del día.");
       }
     } catch {
-      toast.error("Error al generar reporte diario`);
+      toast.error("Error al generar reporte diario");
     }
   };
 
@@ -270,7 +270,7 @@ export default function TurnosPage() {
                   Abierto: {new Date(activeShift.opened_at).toLocaleString('es-AR', { dateStyle: 'long', timeStyle: 'short' })}
                 </p>
               </div>
-              <Button onClick={() => { setWeights({}); setStep("enter_final`); }} variant="outline"
+              <Button onClick={() => { setWeights({}); setStep("enter_final"); }} variant="outline"
                 className="border-red-500/20 text-red-400 hover:bg-red-500/10 text-xs rounded-md">
                 Cerrar Turno
               </Button>
@@ -331,7 +331,7 @@ export default function TurnosPage() {
               <Button onClick={() => exportPdf(auditReport)} variant="outline" size="sm" className="h-7 px-2 text-xs text-indigo-400 border-indigo-500/20 bg-indigo-500/10 hover:bg-indigo-500/20 hover:text-indigo-300">
                 <Download size={12} className="mr-1.5" /> PDF
               </Button>
-              <button onClick={() => { setAuditReport(null); setViewingAuditId(null); if (!activeShift) setStep("select_type`); else setStep("shift_open`); }}
+              <button onClick={() => { setAuditReport(null); setViewingAuditId(null); if (!activeShift) setStep("select_type"); else setStep("shift_open"); }}
                 className="text-zinc-600 hover:text-zinc-300 transition-colors">
                 <X size={16} />
               </button>

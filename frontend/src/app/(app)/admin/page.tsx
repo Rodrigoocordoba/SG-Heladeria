@@ -10,18 +10,18 @@ import { Plus, Trash, ServerCrash, Store } from "lucide-react";
 type Tab = "sabores" | "envases" | "formatos";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("sabores`);
+  const [activeTab, setActiveTab] = useState<Tab>("sabores");
 
   // Form states
-  const [flavorName, setFlavorName] = useState("`);
-  const [envaseName, setEnvaseName] = useState("`);
-  const [envaseCategory, setEnvaseCategory] = useState("ENVASE`);
+  const [flavorName, setFlavorName] = useState("");
+  const [envaseName, setEnvaseName] = useState("");
+  const [envaseCategory, setEnvaseCategory] = useState("ENVASE");
 
-  const [formatName, setFormatName] = useState("`);
-  const [formatPrice, setFormatPrice] = useState("`);
-  const [formatGrams, setFormatGrams] = useState("`);
-  const [formatMaxFlavors, setFormatMaxFlavors] = useState("`);
-  const [formatLinkedProduct, setFormatLinkedProduct] = useState("`);
+  const [formatName, setFormatName] = useState("");
+  const [formatPrice, setFormatPrice] = useState("");
+  const [formatGrams, setFormatGrams] = useState("");
+  const [formatMaxFlavors, setFormatMaxFlavors] = useState("");
+  const [formatLinkedProduct, setFormatLinkedProduct] = useState("");
 
   const [envases, setEnvases] = useState<any[]>([]);
 
@@ -31,7 +31,7 @@ export default function AdminPage() {
 
   const fetchEnvases = async () => {
     try {
-      const r = await fetch(`${API_URL}/products/?category=ENVASE`);
+      const r = await fetch(`${API_URL}/products/?category=ENVASE");
       if (r.ok) {
         setEnvases(await r.json());
       }
@@ -44,19 +44,19 @@ export default function AdminPage() {
     e.preventDefault();
     if (!flavorName.trim()) return;
     try {
-      const r = await fetch(`${API_URL}/products/`, {
+      const r = await fetch(`${API_URL}/products/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: flavorName, category: "HELADO" }),
       });
       if (r.ok) {
-        toast.success("Sabor agregado correctamente.`);
-        setFlavorName("`);
+        toast.success("Sabor agregado correctamente.");
+        setFlavorName("");
       } else {
-        toast.error("Error al agregar sabor.`);
+        toast.error("Error al agregar sabor.");
       }
     } catch (err) {
-      toast.error("Error de conexión.`);
+      toast.error("Error de conexión.");
     }
   };
 
@@ -64,20 +64,20 @@ export default function AdminPage() {
     e.preventDefault();
     if (!envaseName.trim()) return;
     try {
-      const r = await fetch(`${API_URL}/products/`, {
+      const r = await fetch(`${API_URL}/products/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: envaseName, category: envaseCategory }),
       });
       if (r.ok) {
-        toast.success("Insumo agregado correctamente.`);
-        setEnvaseName("`);
+        toast.success("Insumo agregado correctamente.");
+        setEnvaseName("");
         fetchEnvases();
       } else {
-        toast.error("Error al agregar insumo.`);
+        toast.error("Error al agregar insumo.");
       }
     } catch (err) {
-      toast.error("Error de conexión.`);
+      toast.error("Error de conexión.");
     }
   };
 
@@ -94,23 +94,23 @@ export default function AdminPage() {
       if (formatLinkedProduct) {
         payload.linked_product_id = parseInt(formatLinkedProduct);
       }
-      const r = await fetch(`${API_URL}/sale-formats/`, {
+      const r = await fetch(`${API_URL}/sale-formats/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (r.ok) {
-        toast.success("Formato agregado correctamente.`);
-        setFormatName("`);
-        setFormatPrice("`);
-        setFormatGrams("`);
-        setFormatMaxFlavors("`);
-        setFormatLinkedProduct("`);
+        toast.success("Formato agregado correctamente.");
+        setFormatName("");
+        setFormatPrice("");
+        setFormatGrams("");
+        setFormatMaxFlavors("");
+        setFormatLinkedProduct("");
       } else {
-        toast.error("Error al agregar formato.`);
+        toast.error("Error al agregar formato.");
       }
     } catch (err) {
-      toast.error("Error de conexión.`);
+      toast.error("Error de conexión.");
     }
   };
 
