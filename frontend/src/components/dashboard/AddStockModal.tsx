@@ -1,5 +1,6 @@
-import { API_URL } from "@/config";
 "use client";
+import { API_URL } from "@/config";
+
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -64,8 +65,8 @@ export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryIt
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">Ingresar Stock Envases</Button>
+      <DialogTrigger render={<Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50" />}>
+        Ingresar Stock Envases
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -74,7 +75,7 @@ export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryIt
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label>Producto (Envase/Insumo)</Label>
-            <Select value={productId} onValueChange={setProductId}>
+            <Select value={productId} onValueChange={(val) => setProductId(val || "")}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione un envase" />
               </SelectTrigger>

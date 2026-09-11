@@ -1,5 +1,6 @@
-import { API_URL } from "@/config";
 "use client";
+import { API_URL } from "@/config";
+
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -29,7 +30,7 @@ export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuc
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/sales/", {
+      const response = await fetch(`${API_URL}/sales/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,8 +64,8 @@ export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuc
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">Nueva Venta</Button>
+      <DialogTrigger render={<Button className="bg-blue-600 hover:bg-blue-700 text-white" />}>
+        Nueva Venta
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -73,7 +74,7 @@ export function NewSaleModal({ inventory, onSuccess }: { inventory: any[], onSuc
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label>Producto</Label>
-            <Select value={productId} onValueChange={setProductId}>
+            <Select value={productId} onValueChange={(val) => setProductId(val || "")}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione un producto" />
               </SelectTrigger>

@@ -1,5 +1,6 @@
-import { API_URL } from "@/config";
 "use client";
+import { API_URL } from "@/config";
+
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export default function TurnosPage() {
 
   const fetchData = async () => {
     try {
-      const r = await fetch(`${API_URL}/products/?category=HELADO");
+      const r = await fetch(`${API_URL}/products/?category=HELADO`);
       if (r.ok) {
         const prods = await r.json();
         setFlavors(prods.map((p: any) => ({ id: p.id, name: p.name })));
@@ -48,7 +49,7 @@ export default function TurnosPage() {
     } catch (e) { console.error("Error sabores:", e); }
 
     try {
-      const r = await fetch(`${API_URL}/shifts/active");
+      const r = await fetch(`${API_URL}/shifts/active`);
       if (r.ok) {
         const data = await r.json();
         setActiveShift(data.shift || null);
@@ -57,7 +58,7 @@ export default function TurnosPage() {
     } catch (e) { console.error("Error turno:", e); }
 
     try {
-      const r = await fetch(`${API_URL}/shifts/history");
+      const r = await fetch(`${API_URL}/shifts/history`);
       if (r.ok) setClosedShifts(await r.json());
     } catch (e) { console.error("Error historial:", e); }
 
@@ -73,7 +74,7 @@ export default function TurnosPage() {
     if (w.length === 0) { toast.error("Ingrese al menos un peso inicial."); return; }
     setSubmitting(true);
     try {
-      const r = await fetch(`${API_URL}/shifts/open", {
+      const r = await fetch(`${API_URL}/shifts/open`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shift_type: shiftType, weighings: w })
       });

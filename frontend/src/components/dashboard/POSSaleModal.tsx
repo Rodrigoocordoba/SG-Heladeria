@@ -1,5 +1,6 @@
-import { API_URL } from "@/config";
 "use client";
+import { API_URL } from "@/config";
+
 
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -41,7 +42,8 @@ export function POSSaleModal({
 
   const selectedFormat = formats.find(f => f.id.toString() === selectedFormatId);
 
-  const handleAddFlavor = (flavorId: string) => {
+  const handleAddFlavor = (flavorId: string | null) => {
+    if (!flavorId) return;
     const id = parseInt(flavorId);
     if (!selectedFormat) return;
     if (selectedFlavors.length >= selectedFormat.max_flavors) {
@@ -74,7 +76,7 @@ export function POSSaleModal({
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/sales/", {
+      const response = await fetch(`${API_URL}/sales/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -111,10 +113,8 @@ export function POSSaleModal({
 
   return (
     <Dialog open={open} onOpenChange={handleTryOpen}>
-      <DialogTrigger asChild>
-        <Button className={shiftId ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm" : "bg-slate-700 hover:bg-slate-600 text-slate-300 shadow-sm"}>
-          {shiftId ? "Nueva Venta" : "Sin Turno Abierto"}
-        </Button>
+      <DialogTrigger render={<Button className={shiftId ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm" : "bg-slate-700 hover:bg-slate-600 text-slate-300 shadow-sm"} />}>
+        {shiftId ? "Nueva Venta" : "Sin Turno Abierto"}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -125,7 +125,7 @@ export function POSSaleModal({
           {/* Paso 1: Elegir Formato */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-gray-700">1. Formato de venta</Label>
-            <Select value={selectedFormatId} onValueChange={(val) => { setSelectedFormatId(val); setSelectedFlavors([]); }}>
+            <Select value={selectedFormatId} onValueChange={(val) => { setSelectedFormatId(val || ""); setSelectedFlavors([]); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Ej: 1 Kilo, Cucurucho..." />
               </SelectTrigger>
