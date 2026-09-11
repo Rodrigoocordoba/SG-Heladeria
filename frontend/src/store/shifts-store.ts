@@ -1,6 +1,7 @@
+import { API_URL } from "@/config";
 import { create } from "zustand";
 
-const API = "http://127.0.0.1:8000";
+const API = API_URL;
 
 type Flavor = { id: number; name: string };
 type Weighing = { product_id: number; product_name: string; initial_weight_grams: number };

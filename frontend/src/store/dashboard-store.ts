@@ -1,6 +1,7 @@
+import { API_URL } from "@/config";
 import { create } from "zustand";
 
-const API = "http://127.0.0.1:8000";
+const API = API_URL;
 
 type KPIs = { ventas_del_dia: number; efectivo_en_caja: number; turno_activo: boolean };
 type RecentSale = { id: number; total: number; payment_method: string; date: string; items: { format_name: string; quantity: number; flavors: string[] }[] };

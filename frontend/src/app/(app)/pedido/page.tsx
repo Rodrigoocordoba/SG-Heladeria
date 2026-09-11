@@ -1,3 +1,4 @@
+import { API_URL } from "@/config";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,7 +26,7 @@ export default function PedidoPage() {
 
   const fetchProducts = async () => {
     try {
-      const r = await fetch("http://127.0.0.1:8000/products/");
+      const r = await fetch(`${API_URL}/products/");
       if (r.ok) {
         setProducts(await r.json());
       }

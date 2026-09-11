@@ -1,3 +1,4 @@
+import { API_URL } from "@/config";
 "use client";
 
 import { useState, useEffect } from "react";
@@ -30,7 +31,7 @@ export default function AdminPage() {
 
   const fetchEnvases = async () => {
     try {
-      const r = await fetch("http://127.0.0.1:8000/products/?category=ENVASE");
+      const r = await fetch(`${API_URL}/products/?category=ENVASE");
       if (r.ok) {
         setEnvases(await r.json());
       }
@@ -43,7 +44,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!flavorName.trim()) return;
     try {
-      const r = await fetch("http://127.0.0.1:8000/products/", {
+      const r = await fetch(`${API_URL}/products/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: flavorName, category: "HELADO" }),
@@ -63,7 +64,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!envaseName.trim()) return;
     try {
-      const r = await fetch("http://127.0.0.1:8000/products/", {
+      const r = await fetch(`${API_URL}/products/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: envaseName, category: envaseCategory }),
@@ -93,7 +94,7 @@ export default function AdminPage() {
       if (formatLinkedProduct) {
         payload.linked_product_id = parseInt(formatLinkedProduct);
       }
-      const r = await fetch("http://127.0.0.1:8000/sale-formats/", {
+      const r = await fetch(`${API_URL}/sale-formats/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

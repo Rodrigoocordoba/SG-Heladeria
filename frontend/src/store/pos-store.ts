@@ -1,3 +1,4 @@
+import { API_URL } from "@/config";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -76,7 +77,7 @@ interface POSStore {
 
 const uid = () => Math.random().toString(36).substring(2, 9);
 
-const API = "http://127.0.0.1:8000";
+const API = API_URL;
 
 export const usePOSStore = create<POSStore>()(
   persist(

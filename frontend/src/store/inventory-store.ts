@@ -1,6 +1,7 @@
+import { API_URL } from "@/config";
 import { create } from "zustand";
 
-const API = "http://127.0.0.1:8000";
+const API = API_URL;
 
 type StockItem = { id: number; name: string; category: string; current_stock: number; min_stock: number };
 type LogEntry = { id: number; product_name: string; movement_type: string; quantity_changed: number; created_at: string };

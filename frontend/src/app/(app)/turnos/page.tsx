@@ -1,3 +1,4 @@
+import { API_URL } from "@/config";
 "use client";
 
 import { useEffect, useState } from "react";
@@ -39,7 +40,7 @@ export default function TurnosPage() {
 
   const fetchData = async () => {
     try {
-      const r = await fetch("http://127.0.0.1:8000/products/?category=HELADO");
+      const r = await fetch(`${API_URL}/products/?category=HELADO");
       if (r.ok) {
         const prods = await r.json();
         setFlavors(prods.map((p: any) => ({ id: p.id, name: p.name })));
@@ -47,7 +48,7 @@ export default function TurnosPage() {
     } catch (e) { console.error("Error sabores:", e); }
 
     try {
-      const r = await fetch("http://127.0.0.1:8000/shifts/active");
+      const r = await fetch(`${API_URL}/shifts/active");
       if (r.ok) {
         const data = await r.json();
         setActiveShift(data.shift || null);
@@ -56,7 +57,7 @@ export default function TurnosPage() {
     } catch (e) { console.error("Error turno:", e); }
 
     try {
-      const r = await fetch("http://127.0.0.1:8000/shifts/history");
+      const r = await fetch(`${API_URL}/shifts/history");
       if (r.ok) setClosedShifts(await r.json());
     } catch (e) { console.error("Error historial:", e); }
 
@@ -72,7 +73,7 @@ export default function TurnosPage() {
     if (w.length === 0) { toast.error("Ingrese al menos un peso inicial."); return; }
     setSubmitting(true);
     try {
-      const r = await fetch("http://127.0.0.1:8000/shifts/open", {
+      const r = await fetch(`${API_URL}/shifts/open", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shift_type: shiftType, weighings: w })
       });
@@ -88,7 +89,7 @@ export default function TurnosPage() {
     if (w.length === 0) { toast.error("Ingrese al menos un peso final."); return; }
     setSubmitting(true);
     try {
-      const r = await fetch(`http://127.0.0.1:8000/shifts/${activeShift.id}/close`, {
+      const r = await fetch(`${API_URL}/shifts/${activeShift.id}/close`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ weighings: w })
       });
@@ -101,7 +102,7 @@ export default function TurnosPage() {
   const handleViewAudit = async (id: number) => {
     if (viewingAuditId === id) { setViewingAuditId(null); setAuditReport(null); return; }
     try {
-      const r = await fetch(`http://127.0.0.1:8000/shifts/${id}/audit`);
+      const r = await fetch(`${API_URL}/shifts/${id}/audit`);
       if (r.ok) { setAuditReport(await r.json()); setViewingAuditId(id); setStep("report"); }
     } catch { toast.error("Error al cargar reporte"); }
   };
@@ -131,7 +132,7 @@ export default function TurnosPage() {
   const exportDailyPdf = async () => {
     try {
       toast.info("Generando reporte del día...");
-      const r = await fetch(`http://127.0.0.1:8000/shifts/daily`);
+      const r = await fetch(`${API_URL}/shifts/daily`);
       if (r.ok) {
         const reports: AuditReport[] = await r.json();
         if (reports.length === 0) {

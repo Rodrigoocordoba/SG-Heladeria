@@ -1,3 +1,4 @@
+import { API_URL } from "@/config";
 "use client";
 
 import { useState } from "react";
@@ -35,7 +36,7 @@ export function AddStockModal({ inventory, onSuccess }: { inventory: InventoryIt
 
     setLoading(true);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/inventory/${productId}/add`, {
+      const response = await fetch(`${API_URL}/inventory/${productId}/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
