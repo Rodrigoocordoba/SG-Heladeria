@@ -12,7 +12,7 @@ const navItems = [
     icon: ShoppingCart,
   },
   {
-    title: "Dashboard",
+    title: "Movimientos",
     href: "/dashboard",
     icon: BarChart3,
   },

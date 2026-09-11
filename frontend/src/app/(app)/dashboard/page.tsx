@@ -35,8 +35,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold text-zinc-100">Dashboard</h1>
-          <p className="text-zinc-600 text-xs mt-0.5">{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="text-xl font-semibold text-zinc-100">Movimientos</h1>
+          <p className="text-zinc-500 text-sm mt-1">Aquí puedes ver todas las ventas y movimientos de la heladería.</p>
+          <p className="text-zinc-600 text-xs mt-2">{new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
         {activeShift ? (
           <span className="text-xs font-medium text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-md">
