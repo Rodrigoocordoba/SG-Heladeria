@@ -38,6 +38,7 @@ export default function TurnosPage() {
   const [submitting, setSubmitting] = useState(false);
   const [auditReport, setAuditReport] = useState<AuditReport | null>(null);
   const [viewingAuditId, setViewingAuditId] = useState<number | null>(null);
+  const [reportDate, setReportDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const fetchData = async () => {
     try {
@@ -132,8 +133,8 @@ export default function TurnosPage() {
 
   const exportDailyPdf = async () => {
     try {
-      toast.info("Generando reporte del día...");
-      const r = await fetch(`${API_URL}/shifts/daily`);
+      toast.info(`Generando reporte del día ${reportDate}...`);
+      const r = await fetch(`${API_URL}/shifts/daily?date=${reportDate}`);
       if (r.ok) {
         const reports: AuditReport[] = await r.json();
         if (reports.length === 0) {
@@ -142,7 +143,7 @@ export default function TurnosPage() {
         }
 
         const doc = new jsPDF();
-        doc.text(`Reporte Diario Consolidado - ${new Date().toLocaleDateString('es-AR')}`, 14, 20);
+        doc.text(`Reporte Diario Consolidado - ${reportDate}`, 14, 20);
         
         let startY = 30;
 
@@ -172,7 +173,7 @@ export default function TurnosPage() {
           startY = (doc as any).lastAutoTable.finalY + 20;
         });
 
-        doc.save(`reporte_diario_${new Date().toISOString().split('T')[0]}.pdf`);
+        doc.save(`reporte_diario_${reportDate}.pdf`);
         toast.success("Reporte descargado.");
       } else {
         toast.error("Error al obtener los turnos del día.");
@@ -391,9 +392,17 @@ export default function TurnosPage() {
         <div className="bg-white/[0.02] border border-white/[0.06] rounded-lg overflow-hidden">
           <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
             <h2 className="text-zinc-200 font-semibold text-sm">Historial de Turnos</h2>
-            <Button onClick={exportDailyPdf} variant="outline" size="sm" className="h-7 px-2 text-xs text-zinc-400 border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:text-zinc-200">
-              <Download size={12} className="mr-1.5" /> Reporte Diario
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input 
+                type="date" 
+                value={reportDate} 
+                onChange={(e) => setReportDate(e.target.value)} 
+                className="h-7 text-xs px-2 w-32 bg-white/[0.02] border-white/[0.06] text-zinc-300"
+              />
+              <Button onClick={exportDailyPdf} variant="outline" size="sm" className="h-7 px-2 text-xs text-zinc-400 border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:text-zinc-200">
+                <Download size={12} className="mr-1.5" /> Descargar
+              </Button>
+            </div>
           </div>
           <div className="divide-y divide-white/[0.04]">
             {closedShifts.map(sh => (

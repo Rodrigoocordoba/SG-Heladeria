@@ -8,6 +8,17 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Heladería SG — API v2 (Doble Velocidad)")
 
+@app.delete("/api/v1/reset-shifts-danger")
+def reset_shifts(db: Session = Depends(get_db)):
+    from app.models import Shift, ShiftWeighing, Sale, SaleItem, SaleItemFlavor
+    db.query(ShiftWeighing).delete()
+    db.query(SaleItemFlavor).delete()
+    db.query(SaleItem).delete()
+    db.query(Sale).delete()
+    db.query(Shift).delete()
+    db.commit()
+    return {"msg": "Shifts reset"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
