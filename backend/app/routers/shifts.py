@@ -114,20 +114,11 @@ def _build_audit_report(shift_id: int, db: Session) -> ShiftAuditReport:
     if not shift:
         raise HTTPException(status_code=404, detail="Turno no encontrado")
 
-    # 1. Calcular Consumo Teórico por sabor
-    theoretical = {}
+    # 1. Ya no calculamos teórico, solo devolvemos el pesaje
     sales = db.query(Sale).filter(Sale.shift_id == shift_id).all()
     total_amount = sum(s.total for s in sales)
     total_efectivo = sum(s.total for s in sales if s.payment_method.upper() == "EFECTIVO")
     total_transfer = sum(s.total for s in sales if s.payment_method.upper() != "EFECTIVO")
-
-    for sale in sales:
-        for item in sale.items:
-            for flavor in item.flavors:
-                pid = flavor.product_id
-                if pid not in theoretical:
-                    theoretical[pid] = {"name": flavor.product.name, "grams": 0.0}
-                theoretical[pid]["grams"] += flavor.grams_assigned
 
     # 2. Obtener datos del pesaje
     weighing_data = {}
@@ -139,17 +130,11 @@ def _build_audit_report(shift_id: int, db: Session) -> ShiftAuditReport:
             "real": w.real_consumption if w.real_consumption is not None else 0.0
         }
 
-    # 3. Cruzar datos
-    all_pids = set(list(theoretical.keys()) + list(weighing_data.keys()))
     flavors_report = []
 
-    for pid in all_pids:
-        theo = theoretical.get(pid, {"grams": 0.0})["grams"]
-        wd = weighing_data.get(pid, {"initial": 0.0, "final": 0.0, "real": 0.0})
+    for pid, wd in weighing_data.items():
         real = wd["real"]
-        diff = real - theo
-        pct = (diff / theo * 100) if theo > 0 else 0.0
-        name = weighing_data.get(pid, theoretical.get(pid, {})).get("name", "Desconocido")
+        name = wd.get("name", "Desconocido")
 
         flavors_report.append(FlavorConsumptionReport(
             product_id=pid,
@@ -157,9 +142,9 @@ def _build_audit_report(shift_id: int, db: Session) -> ShiftAuditReport:
             initial_grams=round(wd["initial"], 2),
             final_grams=round(wd["final"], 2),
             real_consumption_grams=round(real, 2),
-            theoretical_grams=round(theo, 2),
-            difference_grams=round(diff, 2),
-            difference_percent=round(pct, 2)
+            theoretical_grams=0.0,
+            difference_grams=round(real, 2),
+            difference_percent=0.0
         ))
 
     return ShiftAuditReport(
